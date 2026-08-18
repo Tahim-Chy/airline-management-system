@@ -11,16 +11,28 @@ const emptyForm = {
   status: 'Scheduled',
 };
 
+// Safely turns whatever the API sends back (an ISO string, or occasionally
+// a full timestamp) into the "YYYY-MM-DDTHH:mm" format datetime-local inputs need.
+function toDatetimeLocal(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function AdminFlightsPage() {
   const [flights, setFlights] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('info');
 
   const loadFlights = () => {
     fetch('/api/flights')
       .then((res) => res.json())
-      .then((data) => setFlights(data));
+      .then((data) => setFlights(data))
+      .catch(() => setMessage('Could not load flights — check your database connection.'));
   };
 
   useEffect(() => {
@@ -35,18 +47,28 @@ export default function AdminFlightsPage() {
     e.preventDefault();
     const url = editingId ? `/api/flights/${editingId}` : '/api/flights';
     const method = editingId ? 'PUT' : 'POST';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      setMessage(editingId ? 'Flight updated!' : 'Flight created!');
-      setForm(emptyForm);
-      setEditingId(null);
-      loadFlights();
-    } else {
-      setMessage('Something went wrong.');
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessageType('success');
+        setMessage(editingId ? 'Flight updated!' : 'Flight created!');
+        setForm(emptyForm);
+        setEditingId(null);
+        loadFlights();
+      } else {
+        setMessageType('danger');
+        setMessage(data.error || 'Something went wrong.');
+      }
+    } catch (error) {
+      setMessageType('danger');
+      setMessage('Network error — is the dev server running?');
     }
   };
 
@@ -56,18 +78,34 @@ export default function AdminFlightsPage() {
       flight_number: flight.flight_number,
       origin: flight.origin,
       destination: flight.destination,
-      departure_time: flight.departure_time.slice(0, 16),
-      arrival_time: flight.arrival_time.slice(0, 16),
+      departure_time: toDatetimeLocal(flight.departure_time),
+      arrival_time: toDatetimeLocal(flight.arrival_time),
       total_seats: flight.total_seats,
       price: flight.price,
       status: flight.status,
     });
+    setMessage('');
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this flight?')) return;
-    await fetch(`/api/flights/${id}`, { method: 'DELETE' });
-    loadFlights();
+
+    try {
+      const res = await fetch(`/api/flights/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+
+      if (res.ok) {
+        setMessageType('success');
+        setMessage('Flight deleted.');
+        loadFlights();
+      } else {
+        setMessageType('danger');
+        setMessage(data.error || 'Could not delete this flight.');
+      }
+    } catch (error) {
+      setMessageType('danger');
+      setMessage('Network error — is the dev server running?');
+    }
   };
 
   const handleCancelEdit = () => {
@@ -78,7 +116,7 @@ export default function AdminFlightsPage() {
   return (
     <div className="container mt-4">
       <h1>Flight Scheduling (Admin)</h1>
-      {message && <div className="alert alert-info">{message}</div>}
+      {message && <div className={`alert alert-${messageType}`}>{message}</div>}
 
       <form onSubmit={handleSubmit} className="border rounded p-3 mb-4">
         <h5>{editingId ? 'Edit Flight' : 'Create Flight'}</h5>
