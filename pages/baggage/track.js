@@ -56,6 +56,11 @@ export default function TrackBaggagePage() {
             Tag: <strong>{baggage.baggage_tag}</strong>
           </p>
           <p>Weight: {baggage.weight_kg} kg</p>
+          {baggage.extra_fee > 0 && (
+            <p>
+              Extra Fee: <strong>${Number(baggage.extra_fee).toFixed(2)}</strong>
+            </p>
+          )}
           <p>
             Current Status: <strong>{baggage.status}</strong>
           </p>
