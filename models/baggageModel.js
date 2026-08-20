@@ -1,10 +1,31 @@
 import pool from '../lib/db';
 
-export async function registerBaggage({ booking_id, weight_kg }) {
+const FREE_ALLOWANCE_KG = 23;
+const OVERWEIGHT_RATE_PER_KG = 15;
+const ADDITIONAL_BAG_FLAT_FEE = 50;
+
+// Pure function, no DB access — easy to unit test and to explain in a demo.
+export function calculateExtraFee(weightKg, bagNumberForThisBooking) {
+  let fee = 0;
+  if (bagNumberForThisBooking > 1) {
+    fee += ADDITIONAL_BAG_FLAT_FEE;
+  }
+  if (weightKg > FREE_ALLOWANCE_KG) {
+    fee += (weightKg - FREE_ALLOWANCE_KG) * OVERWEIGHT_RATE_PER_KG;
+  }
+  return Number(fee.toFixed(2));
+}
+
+export async function getBaggageCountForBooking(bookingId) {
+  const [rows] = await pool.query('SELECT COUNT(*) AS count FROM baggage WHERE booking_id = ?', [bookingId]);
+  return rows[0].count;
+}
+
+export async function registerBaggage({ booking_id, weight_kg, extra_fee }) {
   const baggage_tag = 'BAG-' + Math.floor(100000 + Math.random() * 900000);
   const [result] = await pool.query(
-    'INSERT INTO baggage (booking_id, baggage_tag, weight_kg, status) VALUES (?, ?, ?, ?)',
-    [booking_id, baggage_tag, weight_kg, 'Checked-In']
+    'INSERT INTO baggage (booking_id, baggage_tag, weight_kg, extra_fee, status) VALUES (?, ?, ?, ?, ?)',
+    [booking_id, baggage_tag, weight_kg, extra_fee, 'Checked-In']
   );
   return { id: result.insertId, baggage_tag };
 }

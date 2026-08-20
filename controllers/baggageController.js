@@ -3,6 +3,8 @@ import {
   getBaggageByTag,
   updateBaggageStatus,
   getAllBaggage,
+  getBaggageCountForBooking,
+  calculateExtraFee,
 } from '../models/baggageModel';
 import { getBookingById } from '../models/bookingModel';
 
@@ -18,8 +20,17 @@ export async function register(req, res) {
       return res.status(404).json({ error: 'Booking not found — check the Booking ID' });
     }
 
-    const baggage = await registerBaggage({ booking_id, weight_kg });
-    res.status(201).json({ message: 'Baggage registered', ...baggage });
+    const existingCount = await getBaggageCountForBooking(booking_id);
+    const bagNumber = existingCount + 1;
+    const extra_fee = calculateExtraFee(Number(weight_kg), bagNumber);
+
+    const baggage = await registerBaggage({ booking_id, weight_kg, extra_fee });
+    res.status(201).json({
+      message: 'Baggage registered',
+      bag_number: bagNumber,
+      extra_fee,
+      ...baggage,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to register baggage' });
