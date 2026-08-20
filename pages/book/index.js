@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Link from 'next/link';
 
 export default function BookFlightPage() {
   const [step, setStep] = useState('search'); // search -> results -> details -> confirmed
@@ -175,7 +176,12 @@ export default function BookFlightPage() {
           <p>
             Total Price: <strong>${confirmation.total_price}</strong>
           </p>
-          <p>Use this Booking ID to check in baggage next.</p>
+          <Link href={`/book/seats/${confirmation.bookingId}`} className="btn btn-primary">
+            Select Seat &amp; Meal →
+          </Link>
+          <p className="mt-2 mb-0 text-muted">
+            Use Booking ID <strong>{confirmation.bookingId}</strong> to check in baggage next.
+          </p>
         </div>
       )}
     </div>
