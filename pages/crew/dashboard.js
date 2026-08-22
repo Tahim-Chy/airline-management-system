@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 export default function CrewDashboard() {
   const router = useRouter();
@@ -55,7 +56,12 @@ export default function CrewDashboard() {
 
   return (
     <div className="container mt-4">
-      <h1>Crew Dashboard</h1>
+      <div className="d-flex justify-content-between align-items-center">
+        <h1>Crew Dashboard</h1>
+        <Link href="/crew/schedule" className="btn btn-outline-primary">
+          My Flight Schedule →
+        </Link>
+      </div>
       <p>
         Welcome, {user.name} ({user.role})
       </p>
