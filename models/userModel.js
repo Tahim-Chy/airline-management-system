@@ -20,3 +20,10 @@ export async function findUserById(id) {
   );
   return rows[0] || null;
 }
+
+export async function getAllCrew() {
+  const [rows] = await pool.query(
+    "SELECT id, name, email FROM users WHERE role = 'crew' ORDER BY name"
+  );
+  return rows;
+}
