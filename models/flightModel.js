@@ -43,8 +43,6 @@ export async function decrementAvailableSeats(flightId, count) {
   );
 }
 
-// --- Sprint 2: Aircraft Assignment System + Gate Allocation Management (Member 1) ---
-
 export async function assignAircraftAndGate(flightId, { aircraft_id, gate_id }) {
   await pool.query(
     'UPDATE flights SET aircraft_id = ?, gate_id = ? WHERE id = ?',
@@ -64,4 +62,9 @@ export async function getFlightsWithAssignments() {
      ORDER BY f.departure_time`
   );
   return rows;
+}
+
+// --- Sprint 3: Flight Status Tracking (Member 1) ---
+export async function updateFlightStatus(id, status) {
+  await pool.query('UPDATE flights SET status = ? WHERE id = ?', [status, id]);
 }
