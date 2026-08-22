@@ -1,11 +1,18 @@
 import { searchFlights, createBooking } from '../models/bookingModel';
 import { getFlightById, decrementAvailableSeats } from '../models/flightModel';
+import { calculateDynamicPrice } from '../lib/pricing';
 
 export async function search(req, res) {
   try {
     const { origin, destination, date } = req.query;
     const flights = await searchFlights({ origin, destination, date });
-    res.status(200).json(flights);
+    // Attach the current dynamic price to every search result so passengers
+    // see the real price they'll pay before they book.
+    const withFares = flights.map((f) => ({
+      ...f,
+      dynamic_price: calculateDynamicPrice(f).dynamic_price,
+    }));
+    res.status(200).json(withFares);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Search failed' });
@@ -28,7 +35,10 @@ export async function book(req, res) {
       return res.status(400).json({ error: 'Not enough seats available' });
     }
 
-    const total_price = flight.price * count;
+    // Sprint 3: charge the current dynamic price, not just the flat base price.
+    const { dynamic_price } = calculateDynamicPrice(flight);
+    const total_price = dynamic_price * count;
+
     const bookingId = await createBooking({
       flight_id,
       passenger_name,
