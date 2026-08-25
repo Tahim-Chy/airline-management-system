@@ -32,22 +32,18 @@ export async function updateFlight(id, data) {
   );
 }
 
+// Sprint 4: raw DELETE — errors (like FK constraints from existing bookings)
+// are caught and translated into a friendly message by the controller.
 export async function deleteFlight(id) {
   await pool.query('DELETE FROM flights WHERE id = ?', [id]);
 }
 
 export async function decrementAvailableSeats(flightId, count) {
-  await pool.query(
-    'UPDATE flights SET available_seats = available_seats - ? WHERE id = ?',
-    [count, flightId]
-  );
+  await pool.query('UPDATE flights SET available_seats = available_seats - ? WHERE id = ?', [count, flightId]);
 }
 
 export async function assignAircraftAndGate(flightId, { aircraft_id, gate_id }) {
-  await pool.query(
-    'UPDATE flights SET aircraft_id = ?, gate_id = ? WHERE id = ?',
-    [aircraft_id || null, gate_id || null, flightId]
-  );
+  await pool.query('UPDATE flights SET aircraft_id = ?, gate_id = ? WHERE id = ?', [aircraft_id || null, gate_id || null, flightId]);
 }
 
 export async function getFlightsWithAssignments() {
@@ -64,7 +60,6 @@ export async function getFlightsWithAssignments() {
   return rows;
 }
 
-// --- Sprint 3: Flight Status Tracking (Member 1) ---
 export async function updateFlightStatus(id, status) {
   await pool.query('UPDATE flights SET status = ? WHERE id = ?', [status, id]);
 }

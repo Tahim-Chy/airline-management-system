@@ -121,6 +121,9 @@ export default function BookFlightPage() {
             <Link href={`/book/seats/${confirmation.bookingId}`} className="btn btn-primary">
               Select Seat &amp; Meal →
             </Link>
+            <Link href={`/boarding-pass/${confirmation.bookingId}`} className="btn btn-dark">
+              Get Boarding Pass →
+            </Link>
             <Link href="/assistance/request" className="btn btn-outline-primary">
               Request Special Assistance
             </Link>
@@ -129,7 +132,7 @@ export default function BookFlightPage() {
             </Link>
           </div>
           <p className="mt-2 mb-0 text-muted">
-            Use Booking ID <strong>{confirmation.bookingId}</strong> for baggage check-in too.
+            Use Booking ID <strong>{confirmation.bookingId}</strong> for baggage check-in too. Select your seat before getting your boarding pass for the best experience.
           </p>
         </div>
       )}

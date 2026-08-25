@@ -14,8 +14,7 @@ import { calculateDynamicPrice } from '../lib/pricing';
 
 export async function listFlights(req, res) {
   try {
-    const flights = await getAllFlights();
-    res.status(200).json(flights);
+    res.status(200).json(await getAllFlights());
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch flights' });
@@ -40,13 +39,8 @@ export async function addFlight(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     const id = await createFlight({
-      flight_number,
-      origin,
-      destination,
-      departure_time,
-      arrival_time,
-      total_seats: total_seats || 150,
-      price: price || 100,
+      flight_number, origin, destination, departure_time, arrival_time,
+      total_seats: total_seats || 150, price: price || 100,
     });
     res.status(201).json({ message: 'Flight created', id });
   } catch (error) {
@@ -66,12 +60,20 @@ export async function editFlight(req, res) {
   }
 }
 
+// Sprint 4 integration fix: a flight with existing bookings, baggage, crew
+// assignments, or fault reports can't be deleted (foreign key constraints) —
+// MySQL error 1451. Instead of a generic 500, tell the admin exactly why.
 export async function removeFlight(req, res) {
   try {
     if (!req.query.id) return res.status(400).json({ error: 'Missing flight id in the request URL' });
     await deleteFlight(req.query.id);
     res.status(200).json({ message: 'Flight deleted' });
   } catch (error) {
+    if (error.errno === 1451) {
+      return res.status(409).json({
+        error: 'This flight can\u2019t be deleted — it already has bookings, baggage, or crew assigned to it. Cancel it instead using Update Flight Status.',
+      });
+    }
     console.error(error);
     res.status(500).json({ error: 'Failed to delete flight' });
   }
@@ -110,25 +112,35 @@ export async function assignFlight(req, res) {
 
 export async function listAssignments(req, res) {
   try {
-    const flights = await getFlightsWithAssignments();
-    res.status(200).json(flights);
+    res.status(200).json(await getFlightsWithAssignments());
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch assignments' });
   }
 }
 
-// --- Sprint 3: Flight Status Tracking (Member 1) ---
-
 const VALID_STATUSES = ['Scheduled', 'Boarding', 'Delayed', 'Departed', 'Landed', 'Cancelled'];
+const RELEASE_ON_STATUSES = ['Landed', 'Cancelled'];
 
+// Sprint 4 integration fix: once a flight lands or is cancelled, its aircraft
+// and gate were sitting "Assigned"/"Occupied" forever with no way back to
+// Available. Now changing status to Landed/Cancelled frees both automatically —
+// this is what "integrating the flight operations module" means in practice.
 export async function changeStatus(req, res) {
   try {
     const { status } = req.body;
     if (!VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: `Status must be one of: ${VALID_STATUSES.join(', ')}` });
     }
+
     await updateFlightStatus(req.query.id, status);
+
+    if (RELEASE_ON_STATUSES.includes(status)) {
+      const flight = await getFlightById(req.query.id);
+      if (flight?.aircraft_id) await setAircraftStatus(flight.aircraft_id, 'Available');
+      if (flight?.gate_id) await setGateStatus(flight.gate_id, 'Available');
+    }
+
     res.status(200).json({ message: 'Status updated' });
   } catch (error) {
     console.error(error);
@@ -136,19 +148,12 @@ export async function changeStatus(req, res) {
   }
 }
 
-// --- Sprint 3: Dynamic Fare Management (Member 1) ---
-
 export async function listFares(req, res) {
   try {
     const flights = await getAllFlights();
     const fares = flights.map((f) => ({
-      id: f.id,
-      flight_number: f.flight_number,
-      origin: f.origin,
-      destination: f.destination,
-      departure_time: f.departure_time,
-      available_seats: f.available_seats,
-      total_seats: f.total_seats,
+      id: f.id, flight_number: f.flight_number, origin: f.origin, destination: f.destination,
+      departure_time: f.departure_time, available_seats: f.available_seats, total_seats: f.total_seats,
       ...calculateDynamicPrice(f),
     }));
     res.status(200).json(fares);
