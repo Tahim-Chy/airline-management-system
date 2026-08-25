@@ -9,12 +9,8 @@ export default function CrewDashboard() {
   const [message, setMessage] = useState('');
 
   const loadHistory = async (token) => {
-    const res = await fetch('/api/attendance/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      setHistory(await res.json());
-    }
+    const res = await fetch('/api/attendance/me', { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) setHistory(await res.json());
   };
 
   useEffect(() => {
@@ -32,10 +28,7 @@ export default function CrewDashboard() {
 
   const handleClockIn = async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/attendance/clock-in', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch('/api/attendance/clock-in', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
     setMessage(data.message || data.error);
     loadHistory(token);
@@ -43,10 +36,7 @@ export default function CrewDashboard() {
 
   const handleClockOut = async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/attendance/clock-out', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch('/api/attendance/clock-out', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
     setMessage(data.message ? `Clocked out. Worked ${data.workingHours} hours.` : data.error);
     loadHistory(token);
@@ -58,33 +48,21 @@ export default function CrewDashboard() {
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center">
         <h1>Crew Dashboard</h1>
-        <Link href="/crew/schedule" className="btn btn-outline-primary">
-          My Flight Schedule →
-        </Link>
+        <div className="d-flex gap-2">
+          <Link href="/crew/schedule" className="btn btn-outline-primary">My Flight Schedule →</Link>
+          <Link href="/crew/certifications" className="btn btn-outline-primary">My Certifications →</Link>
+        </div>
       </div>
-      <p>
-        Welcome, {user.name} ({user.role})
-      </p>
+      <p>Welcome, {user.name} ({user.role})</p>
 
       {message && <div className="alert alert-info">{message}</div>}
 
-      <button className="btn btn-success me-2" onClick={handleClockIn}>
-        Clock In
-      </button>
-      <button className="btn btn-danger" onClick={handleClockOut}>
-        Clock Out
-      </button>
+      <button className="btn btn-success me-2" onClick={handleClockIn}>Clock In</button>
+      <button className="btn btn-danger" onClick={handleClockOut}>Clock Out</button>
 
       <h5 className="mt-4">Attendance History</h5>
       <table className="table table-striped">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Clock In</th>
-            <th>Clock Out</th>
-            <th>Hours Worked</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Hours Worked</th></tr></thead>
         <tbody>
           {history.map((h) => (
             <tr key={h.id}>
