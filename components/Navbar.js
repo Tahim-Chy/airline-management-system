@@ -19,24 +19,17 @@ export default function Navbar() {
         </Link>
 
         <div className="position-relative">
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-light"
-            onClick={() => setServicesOpen((open) => !open)}
-          >
+          <button type="button" className="btn btn-sm btn-outline-light" onClick={() => setServicesOpen((o) => !o)}>
             Passenger Services ▾
           </button>
           {servicesOpen && (
-            <div
-              className="position-absolute bg-white rounded shadow p-2"
-              style={{ top: '110%', left: 0, minWidth: '220px', zIndex: 1000 }}
-              onMouseLeave={() => setServicesOpen(false)}
-            >
+            <div className="position-absolute bg-white rounded shadow p-2" style={{ top: '110%', left: 0, minWidth: '230px', zIndex: 1000 }} onMouseLeave={() => setServicesOpen(false)}>
               <Link className="dropdown-item d-block p-1" href="/baggage/register">Register Baggage</Link>
               <Link className="dropdown-item d-block p-1" href="/baggage/track">Track Baggage</Link>
               <Link className="dropdown-item d-block p-1" href="/lost-baggage/report">Report Lost Baggage</Link>
               <Link className="dropdown-item d-block p-1" href="/assistance/request">Special Assistance</Link>
               <Link className="dropdown-item d-block p-1" href="/loyalty">Loyalty Points</Link>
+              <Link className="dropdown-item d-block p-1" href="/feedback/submit">Feedback &amp; Complaints</Link>
             </div>
           )}
         </div>
@@ -46,19 +39,11 @@ export default function Navbar() {
         </Link>
 
         <div className="position-relative">
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-light"
-            onClick={() => setAdminOpen((open) => !open)}
-          >
+          <button type="button" className="btn btn-sm btn-outline-light" onClick={() => setAdminOpen((o) => !o)}>
             Admin ▾
           </button>
           {adminOpen && (
-            <div
-              className="position-absolute bg-white rounded shadow p-2"
-              style={{ top: '110%', left: 0, minWidth: '240px', zIndex: 1000 }}
-              onMouseLeave={() => setAdminOpen(false)}
-            >
+            <div className="position-absolute bg-white rounded shadow p-2" style={{ top: '110%', left: 0, minWidth: '250px', maxHeight: '75vh', overflowY: 'auto', zIndex: 1000 }} onMouseLeave={() => setAdminOpen(false)}>
               <div className="text-muted small px-1 pt-1">Flights &amp; Fleet</div>
               <Link className="dropdown-item d-block p-1" href="/admin/flights">Flights (CRUD)</Link>
               <Link className="dropdown-item d-block p-1" href="/admin/flight-status">Update Flight Status</Link>
@@ -71,11 +56,17 @@ export default function Navbar() {
               <Link className="dropdown-item d-block p-1" href="/admin/boarding-queue">Boarding Queue</Link>
               <Link className="dropdown-item d-block p-1" href="/admin/assistance-requests">Assistance Requests</Link>
               <Link className="dropdown-item d-block p-1" href="/admin/lost-baggage">Lost &amp; Found</Link>
+              <Link className="dropdown-item d-block p-1" href="/admin/feedback">Feedback &amp; Complaints</Link>
 
               <div className="text-muted small px-1 pt-2">Crew &amp; Maintenance</div>
               <Link className="dropdown-item d-block p-1" href="/admin/crew-schedule">Crew Scheduling</Link>
               <Link className="dropdown-item d-block p-1" href="/admin/certifications">Crew Certifications</Link>
               <Link className="dropdown-item d-block p-1" href="/admin/maintenance">Aircraft Maintenance</Link>
+              <Link className="dropdown-item d-block p-1" href="/admin/faults">Fault Reports</Link>
+
+              <div className="text-muted small px-1 pt-2">Finance</div>
+              <Link className="dropdown-item d-block p-1" href="/admin/analytics">Revenue &amp; Expense Dashboard</Link>
+              <Link className="dropdown-item d-block p-1" href="/admin/expenses">Log an Expense</Link>
             </div>
           )}
         </div>
