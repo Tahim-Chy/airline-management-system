@@ -1,5 +1,4 @@
 import { getFlight, editFlight, removeFlight } from '../../../controllers/flightController';
-
 export default async function handler(req, res) {
   if (req.method === 'GET') return getFlight(req, res);
   if (req.method === 'PUT') return editFlight(req, res);
