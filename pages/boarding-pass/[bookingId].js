@@ -64,7 +64,7 @@ export default function BoardingPassPage() {
     <div className="container mt-4 d-flex flex-column align-items-center">
       <div className="boarding-pass">
         <div className="stub-main">
-          <div className="airline-name">AIRLINE MANAGEMENT SYSTEM</div>
+          <div className="airline-name">BRAC AIRLINE BOOKING SERVICE</div>
           <div className="route">
             <div className="airport">
               <div className="code">{airportCode(pass.origin)}</div>
