@@ -25,13 +25,15 @@ export default function BoardingQueuePage() {
         <div className="col-md-4"><button className="btn btn-primary" onClick={handleAssignGroups} disabled={!flightId}>Assign Boarding Groups</button></div>
       </div>
       {flightId && (
-        <table className="table table-striped align-middle">
+        <div className="table-responsive">
+<table className="table table-striped align-middle">
           <thead><tr><th>Group</th><th>Passenger</th><th>Seat</th><th>Boarded</th><th></th></tr></thead>
           <tbody>
             {queue.map((q) => (<tr key={q.id} className={q.boarded ? 'text-muted' : ''}><td><span className={`badge ${GROUP_BADGE[q.boarding_group] || 'bg-light text-dark border'}`}>{q.boarding_group || 'Not assigned'}</span></td><td>{q.passenger_name}</td><td>{q.seat_numbers || '—'}</td><td>{q.boarded ? '✓ Boarded' : 'Waiting'}</td><td><button className={`btn btn-sm ${q.boarded ? 'btn-outline-secondary' : 'btn-success'}`} onClick={() => handleToggleBoarded(q)}>{q.boarded ? 'Undo' : 'Mark Boarded'}</button></td></tr>))}
             {queue.length === 0 && <tr><td colSpan={5} className="text-muted">No passengers booked on this flight yet.</td></tr>}
           </tbody>
         </table>
+</div>
       )}
     </div>
   );

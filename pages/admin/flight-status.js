@@ -16,10 +16,12 @@ export default function AdminFlightStatusPage() {
       <h1>Update Flight Status</h1>
       <p className="text-muted">Marking a flight Landed or Cancelled automatically frees its aircraft and gate.</p>
       {message && <div className={`alert alert-${messageType}`}>{message}</div>}
-      <table className="table table-striped align-middle">
+      <div className="table-responsive">
+<table className="table table-striped align-middle">
         <thead><tr><th>Flight</th><th>Route</th><th>Current Status</th><th>Change To</th></tr></thead>
         <tbody>{flights.map((f) => (<tr key={f.id}><td>{f.flight_number}</td><td>{f.origin} → {f.destination}</td><td><span className={`badge ${STATUS_BADGE[f.status] || 'bg-secondary'}`}>{f.status}</span></td><td><select className="form-select form-select-sm" style={{ width: 'auto' }} value={f.status} onChange={(e) => handleStatusChange(f.id, e.target.value)}>{STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}</select></td></tr>))}</tbody>
       </table>
+</div>
     </div>
   );
 }

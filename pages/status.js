@@ -10,13 +10,15 @@ export default function FlightStatusBoard() {
         <h1>Flight Status</h1>
         {lastUpdated && <span className="text-muted small">Updated {lastUpdated.toLocaleTimeString()} · refreshes every 10s</span>}
       </div>
-      <table className="table table-striped align-middle">
+      <div className="table-responsive">
+<table className="table table-striped align-middle">
         <thead><tr><th>Flight</th><th>Route</th><th>Departure</th><th>Status</th></tr></thead>
         <tbody>
           {flights.map((f) => (<tr key={f.id}><td>{f.flight_number}</td><td>{f.origin} → {f.destination}</td><td>{new Date(f.departure_time).toLocaleString()}</td><td><span className={`badge ${STATUS_BADGE[f.status] || 'bg-secondary'}`}>{f.status}</span></td></tr>))}
           {flights.length === 0 && <tr><td colSpan={4} className="text-muted">No flights scheduled.</td></tr>}
         </tbody>
       </table>
+</div>
     </div>
   );
 }

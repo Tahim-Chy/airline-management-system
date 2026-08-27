@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Head from 'next/head';
+import { SkeletonCard } from '../components/Skeleton';
+import { useToast } from '../components/ToastProvider';
 
 const STATUS_BADGE = {
   Scheduled: 'bg-secondary',
@@ -14,8 +16,18 @@ const STATUS_BADGE = {
 
 export default function MyBookingsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [bookings, setBookings] = useState(null);
   const [error, setError] = useState('');
+
+  const loadBookings = (token) => {
+    fetch('/api/bookings/my-bookings', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.error) setError(data.error);
+        else setBookings(data);
+      });
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,14 +35,21 @@ export default function MyBookingsPage() {
       router.push('/login');
       return;
     }
-    fetch('/api/bookings/my-bookings', { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) setError(data.error);
-        else setBookings(data);
-      });
+    loadBookings(token);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleCancel = async (bookingId) => {
+    if (!confirm('Cancel this booking? Your seats will be released.')) return;
+    const res = await fetch(`/api/bookings/${bookingId}/cancel`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(data.message, 'success');
+      loadBookings(localStorage.getItem('token'));
+    } else {
+      showToast(data.error, 'danger');
+    }
+  };
 
   return (
     <div className="container mt-4 fade-in">
@@ -41,7 +60,13 @@ export default function MyBookingsPage() {
       <p className="text-muted">Every flight you have booked while logged in, in one place.</p>
 
       {error && <div className="alert alert-danger">{error}</div>}
-      {bookings === null && !error && <p>Loading…</p>}
+
+      {bookings === null && !error && (
+        <div className="row g-3">
+          <div className="col-md-6"><SkeletonCard /></div>
+          <div className="col-md-6"><SkeletonCard /></div>
+        </div>
+      )}
 
       {bookings && bookings.length === 0 && (
         <div className="card p-5 text-center">
@@ -74,6 +99,7 @@ export default function MyBookingsPage() {
                 </div>
                 <div className="small text-muted mb-3">
                   <i className="bi bi-award me-1" /> Seat: {b.seat_numbers || 'Not selected'} · ${Number(b.total_price).toFixed(2)}
+                  {b.booking_status === 'Cancelled' && <span className="text-danger ms-2">Cancelled</span>}
                 </div>
                 <div className="d-flex gap-2 flex-wrap mt-auto">
                   <Link href={`/book/seats/${b.id}`} className="btn btn-sm btn-outline-primary">
@@ -82,6 +108,11 @@ export default function MyBookingsPage() {
                   <Link href={`/boarding-pass/${b.id}`} className="btn btn-sm btn-dark">
                     Boarding Pass
                   </Link>
+                  {b.booking_status !== 'Cancelled' && (
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleCancel(b.id)}>
+                      Cancel
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

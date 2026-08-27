@@ -70,7 +70,7 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-              <div className="mb-4">
+              <div className="mb-2">
                 <label className="form-label small fw-semibold">Password</label>
                 <div className="input-group">
                   <span className="input-group-text bg-white"><i className="bi bi-lock" /></span>
@@ -82,6 +82,9 @@ export default function LoginPage() {
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                   />
                 </div>
+              </div>
+              <div className="text-end mb-4">
+                <Link href="/forgot-password" className="small">Forgot password?</Link>
               </div>
               <button className="btn btn-primary w-100" type="submit" disabled={loading}>
                 {loading ? 'Logging in…' : 'Log In'}
