@@ -1,4 +1,4 @@
-import { searchFlights, createBooking, getBookingsForUser } from '../models/bookingModel';
+import { searchFlights, createBooking, getBookingsForUser, cancelBooking, getBookingById } from '../models/bookingModel';
 import { getFlightById, decrementAvailableSeats } from '../models/flightModel';
 import { calculateDynamicPrice } from '../lib/pricing';
 import { getUserFromRequest } from '../lib/auth';
@@ -72,5 +72,37 @@ export async function myBookings(req, res) {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch your bookings' });
+  }
+}
+
+// New: passenger self-service cancellation, and a lookup used by the
+// cancellation page to show booking details before confirming.
+export async function lookupBooking(req, res) {
+  try {
+    const booking = await getBookingById(req.query.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found — check the Booking ID' });
+    res.status(200).json(booking);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to look up booking' });
+  }
+}
+
+export async function cancel(req, res) {
+  try {
+    const booking = await getBookingById(req.query.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found — check the Booking ID' });
+    if (booking.booking_status === 'Cancelled') {
+      return res.status(400).json({ error: 'This booking is already cancelled' });
+    }
+    if (!BOOKABLE_STATUSES.includes(booking.flight_status)) {
+      return res.status(400).json({ error: `This flight has already ${booking.flight_status.toLowerCase()} — it can no longer be cancelled` });
+    }
+
+    await cancelBooking(req.query.id);
+    res.status(200).json({ message: 'Booking cancelled — your seats have been released' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to cancel booking' });
   }
 }

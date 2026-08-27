@@ -26,10 +26,12 @@ export default function AdminGatesPage() {
           <div className="col-md-2"><button className="btn btn-primary w-100" type="submit">Add</button></div>
         </div>
       </form>
-      <table className="table table-striped align-middle">
+      <div className="table-responsive">
+<table className="table table-striped align-middle">
         <thead><tr><th>Gate</th><th>Terminal</th><th>Status</th><th></th></tr></thead>
         <tbody>{gates.map((g) => (<tr key={g.id}><td>{g.gate_number}</td><td>{g.terminal}</td><td><span className={`badge ${STATUS_BADGE[g.status] || 'bg-secondary'}`}>{g.status}</span></td><td><button className="btn btn-sm btn-danger" onClick={() => handleDelete(g.id)}>Remove</button></td></tr>))}</tbody>
       </table>
+</div>
     </div>
   );
 }

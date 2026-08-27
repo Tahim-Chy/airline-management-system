@@ -16,10 +16,12 @@ export default function MyCertificationsPage() {
       {certs === null && <p>Loading…</p>}
       {certs && certs.length === 0 && <p className="text-muted">No certifications on file yet.</p>}
       {certs && certs.length > 0 && (
-        <table className="table table-striped">
+        <div className="table-responsive">
+<table className="table table-striped">
           <thead><tr><th>Certification</th><th>Issued</th><th>Expires</th><th>Status</th></tr></thead>
           <tbody>{certs.map((c) => (<tr key={c.id}><td>{c.certification_name}</td><td>{c.issue_date}</td><td>{c.expiry_date}</td><td><span className={`badge ${STATUS_BADGE[c.cert_status]}`}>{c.cert_status}</span></td></tr>))}</tbody>
         </table>
+</div>
       )}
     </div>
   );

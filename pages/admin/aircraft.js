@@ -27,10 +27,12 @@ export default function AdminAircraftPage() {
         </div>
         <button className="btn btn-primary mt-3" type="submit">Add Aircraft</button>
       </form>
-      <table className="table table-striped align-middle">
+      <div className="table-responsive">
+<table className="table table-striped align-middle">
         <thead><tr><th>Tail Number</th><th>Model</th><th>Capacity</th><th>Status</th><th></th></tr></thead>
         <tbody>{aircraft.map((a) => (<tr key={a.id}><td>{a.tail_number}</td><td>{a.model}</td><td>{a.capacity}</td><td><span className={`badge ${STATUS_BADGE[a.status] || 'bg-secondary'}`}>{a.status}</span></td><td><button className="btn btn-sm btn-danger" onClick={() => handleDelete(a.id)}>Remove</button></td></tr>))}</tbody>
       </table>
+</div>
     </div>
   );
 }

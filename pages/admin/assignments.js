@@ -34,10 +34,12 @@ export default function AdminAssignmentsPage() {
         <button className="btn btn-primary mt-3" type="submit">Save Assignment</button>
       </form>
       <h5>Current Assignments</h5>
-      <table className="table table-striped align-middle">
+      <div className="table-responsive">
+<table className="table table-striped align-middle">
         <thead><tr><th>Flight</th><th>Route</th><th>Departure</th><th>Aircraft</th><th>Gate</th></tr></thead>
         <tbody>{assignments.map((f) => (<tr key={f.id}><td>{f.flight_number}</td><td>{f.origin} → {f.destination}</td><td>{new Date(f.departure_time).toLocaleString()}</td><td>{f.tail_number ? <span className="badge bg-primary">{f.tail_number} ({f.model})</span> : <span className="text-muted">Not assigned</span>}</td><td>{f.gate_number ? <span className="badge bg-info text-dark">Gate {f.gate_number}</span> : <span className="text-muted">Not assigned</span>}</td></tr>))}</tbody>
       </table>
+</div>
     </div>
   );
 }

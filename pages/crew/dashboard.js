@@ -42,10 +42,12 @@ export default function CrewDashboard() {
       <button className="btn btn-success me-2" onClick={handleClockIn}>Clock In</button>
       <button className="btn btn-danger" onClick={handleClockOut}>Clock Out</button>
       <h5 className="mt-4">Attendance History</h5>
-      <table className="table table-striped">
+      <div className="table-responsive">
+<table className="table table-striped">
         <thead><tr><th>Date</th><th>Clock In</th><th>Clock Out</th><th>Hours Worked</th></tr></thead>
         <tbody>{history.map((h) => (<tr key={h.id}><td>{h.attendance_date}</td><td>{h.clock_in ? new Date(h.clock_in).toLocaleTimeString() : '-'}</td><td>{h.clock_out ? new Date(h.clock_out).toLocaleTimeString() : '-'}</td><td>{h.working_hours ?? '-'}</td></tr>))}</tbody>
       </table>
+</div>
     </div>
   );
 }

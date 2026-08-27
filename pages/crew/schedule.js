@@ -14,10 +14,12 @@ export default function CrewSchedulePage() {
       {schedule === null && <p>Loading…</p>}
       {schedule && schedule.length === 0 && <p className="text-muted">No flights assigned to you yet.</p>}
       {schedule && schedule.length > 0 && (
-        <table className="table table-striped">
+        <div className="table-responsive">
+<table className="table table-striped">
           <thead><tr><th>Flight</th><th>Route</th><th>Departure</th><th>Your Role</th><th>Status</th></tr></thead>
           <tbody>{schedule.map((s) => (<tr key={s.id}><td>{s.flight_number}</td><td>{s.origin} → {s.destination}</td><td>{new Date(s.departure_time).toLocaleString()}</td><td><span className="badge bg-primary">{s.role_on_flight}</span></td><td>{s.status}</td></tr>))}</tbody>
         </table>
+</div>
       )}
     </div>
   );

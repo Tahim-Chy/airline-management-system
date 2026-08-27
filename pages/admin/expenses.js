@@ -27,11 +27,13 @@ export default function AdminExpensesPage() {
         </div>
         <button className="btn btn-primary mt-3" type="submit">Record Expense</button>
       </form>
-      <table className="table table-striped align-middle">
+      <div className="table-responsive">
+<table className="table table-striped align-middle">
         <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead>
         <tbody>{expenses.map((e) => (<tr key={e.id}><td>{e.expense_date}</td><td><span className="badge bg-secondary">{e.category}</span></td><td className="small">{e.description || '—'}</td><td>${Number(e.amount).toFixed(2)}</td></tr>))}
         {expenses.length === 0 && <tr><td colSpan={4} className="text-muted">No expenses logged yet.</td></tr>}</tbody>
       </table>
+</div>
     </div>
   );
 }

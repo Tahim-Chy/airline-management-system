@@ -66,3 +66,15 @@ export async function getTodayBookingCount() {
   const [rows] = await pool.query("SELECT COUNT(*) AS count FROM bookings WHERE DATE(created_at) = CURDATE() AND booking_status = 'Confirmed'");
   return rows[0].count;
 }
+
+// New: passenger self-service cancellation. Releases the seats back to the
+// flight and clears any seat assignment so they become bookable again.
+export async function cancelBooking(bookingId) {
+  const booking = await getBookingById(bookingId);
+  if (!booking) return null;
+  if (booking.booking_status === 'Cancelled') return booking;
+
+  await pool.query("UPDATE bookings SET booking_status = 'Cancelled', seat_numbers = NULL WHERE id = ?", [bookingId]);
+  await pool.query('UPDATE flights SET available_seats = available_seats + ? WHERE id = ?', [booking.seat_count, booking.flight_id]);
+  return { ...booking, booking_status: 'Cancelled' };
+}
