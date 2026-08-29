@@ -3,16 +3,20 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const STATUSES = ['Reported', 'Under Repair', 'Resolved'];
 const STATUS_BADGE = { Reported: 'bg-secondary', 'Under Repair': 'bg-warning text-dark', Resolved: 'bg-success' };
 const SEVERITY_BADGE = { Minor: 'bg-info text-dark', Major: 'bg-warning text-dark', Critical: 'bg-danger' };
 
 export default function AdminFaultsPage() {
+  const status = useRequireRole(['admin']);
   const { showToast } = useToast();
   const [faults, setFaults] = useState(null);
 
-  const loadFaults = () => fetch('/api/faults').then((res) => res.json()).then(setFaults);
+  const loadFaults = () => authFetch('/api/faults').then((res) => (res.ok ? res.json() : [])).then(setFaults);
   useEffect(() => { loadFaults(); }, []);
 
   const { query, setQuery, page, setPage, totalPages, totalResults, pageData } = useSearchAndPaginate(
@@ -22,11 +26,14 @@ export default function AdminFaultsPage() {
   );
 
   const handleStatusChange = async (id, status) => {
-    const res = await fetch(`/api/faults/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    const res = await authFetch(`/api/faults/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
     const data = await res.json();
     showToast(res.ok ? (status === 'Resolved' ? 'Fault resolved — aircraft is Available again.' : 'Status updated.') : data.error, res.ok ? 'success' : 'danger');
     loadFaults();
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

@@ -1,6 +1,9 @@
 import { scheduleMaintenance, getAllMaintenance, getMaintenanceRecordById, completeMaintenance } from '../models/maintenanceModel';
 import { setAircraftStatus } from '../models/aircraftModel';
+import { requireRole } from '../lib/auth';
+
 export async function schedule(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     const { aircraft_id, maintenance_type, scheduled_date, notes } = req.body;
     if (!aircraft_id || !maintenance_type || !scheduled_date) return res.status(400).json({ error: 'Aircraft, type, and scheduled date are required' });
@@ -9,8 +12,12 @@ export async function schedule(req, res) {
     res.status(201).json({ message: 'Maintenance scheduled — aircraft marked In Maintenance', id });
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to schedule maintenance' }); }
 }
-export async function list(req, res) { try { res.status(200).json(await getAllMaintenance()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch maintenance records' }); } }
+export async function list(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
+  try { res.status(200).json(await getAllMaintenance()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch maintenance records' }); }
+}
 export async function complete(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     const record = await getMaintenanceRecordById(req.query.id);
     if (!record) return res.status(404).json({ error: 'Maintenance record not found' });

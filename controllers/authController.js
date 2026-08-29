@@ -8,6 +8,12 @@ export async function register(req, res) {
   try {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password || !role) return res.status(400).json({ error: 'All fields are required' });
+
+    const ALLOWED_SELF_REGISTER_ROLES = ['passenger', 'crew', 'ground_staff'];
+    if (!ALLOWED_SELF_REGISTER_ROLES.includes(role)) {
+      return res.status(403).json({ error: 'That role cannot be self-registered. Choose Passenger, Crew, or Ground Staff.' });
+    }
+
     const existing = await findUserByEmail(email);
     if (existing) return res.status(409).json({ error: 'Email already registered' });
     const passwordHash = await bcrypt.hash(password, 10);

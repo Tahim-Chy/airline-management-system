@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Head from 'next/head';
+import { useRequireRole } from '../../lib/useRequireRole';
+import AccessDenied from '../../components/AccessDenied';
+import { authFetch } from '../../lib/authFetch';
 
 const QUICK_ACTIONS = [
   { href: '/admin/flights', icon: 'bi-calendar-plus', label: 'Create Flight' },
@@ -12,13 +15,18 @@ const QUICK_ACTIONS = [
 ];
 
 export default function AdminDashboard() {
+  const status = useRequireRole(['admin']);
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    fetch('/api/admin/dashboard-stats')
+    if (status !== 'authorized') return;
+    authFetch('/api/admin/dashboard-stats')
       .then((res) => res.json())
       .then(setStats);
-  }, []);
+  }, [status]);
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   const alertCount = stats ? stats.alerts.expiring_certifications + stats.alerts.active_maintenance + stats.alerts.open_fault_reports : 0;
 

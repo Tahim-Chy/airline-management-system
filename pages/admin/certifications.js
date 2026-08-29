@@ -3,18 +3,22 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const STATUS_BADGE = { Valid: 'bg-success', 'Expiring Soon': 'bg-warning text-dark', Expired: 'bg-danger' };
 
 export default function AdminCertificationsPage() {
+  const status = useRequireRole(['admin']);
   const { showToast } = useToast();
   const [certifications, setCertifications] = useState(null);
   const [crew, setCrew] = useState([]);
   const [form, setForm] = useState({ crew_id: '', certification_name: '', issue_date: '', expiry_date: '' });
 
   const loadData = () =>
-    fetch('/api/certifications')
-      .then((res) => res.json())
+    authFetch('/api/certifications')
+      .then((res) => (res.ok ? res.json() : { certifications: [], crew: [] }))
       .then((data) => {
         setCertifications(data.certifications);
         setCrew(data.crew);
@@ -29,7 +33,7 @@ export default function AdminCertificationsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/certifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/certifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) {
       showToast('Certification added.', 'success');
@@ -39,6 +43,9 @@ export default function AdminCertificationsPage() {
       showToast(data.error, 'danger');
     }
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

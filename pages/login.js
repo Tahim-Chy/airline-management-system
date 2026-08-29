@@ -26,6 +26,7 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.user.role === 'crew') router.push('/crew/dashboard');
       else if (data.user.role === 'admin') router.push('/admin/dashboard');
+      else if (data.user.role === 'ground_staff') router.push('/ground-staff/dashboard');
       else router.push('/book');
     } else {
       setError(data.error);

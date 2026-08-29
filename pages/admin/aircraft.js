@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const STATUS_BADGE = { Available: 'bg-success', Assigned: 'bg-warning text-dark', 'In Maintenance': 'bg-danger' };
 export default function AdminAircraftPage() {
+  const status = useRequireRole(['admin']);
   const [aircraft, setAircraft] = useState([]);
   const [form, setForm] = useState({ tail_number: '', model: '', capacity: 150 });
   const [message, setMessage] = useState(''); const [messageType, setMessageType] = useState('info');
-  const loadAircraft = () => fetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
+  const loadAircraft = () => authFetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
   useEffect(() => { loadAircraft(); }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/aircraft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/aircraft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) { setMessageType('success'); setMessage('Aircraft added to the fleet.'); setForm({ tail_number: '', model: '', capacity: 150 }); loadAircraft(); }
     else { setMessageType('danger'); setMessage(data.error); }
   };
-  const handleDelete = async (id) => { if (!confirm('Remove this aircraft from the fleet?')) return; await fetch(`/api/aircraft/${id}`, { method: 'DELETE' }); loadAircraft(); };
+  const handleDelete = async (id) => { if (!confirm('Remove this aircraft from the fleet?')) return; await authFetch(`/api/aircraft/${id}`, { method: 'DELETE' }); loadAircraft(); };
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Aircraft Fleet</h1>

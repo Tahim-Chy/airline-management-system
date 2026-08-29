@@ -3,10 +3,14 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const ROLES = ['Pilot', 'Co-Pilot', 'Flight Attendant', 'Purser'];
 
 export default function CrewSchedulePage() {
+  const status = useRequireRole(['admin']);
   const { showToast } = useToast();
   const [flights, setFlights] = useState([]);
   const [crew, setCrew] = useState([]);
@@ -14,9 +18,9 @@ export default function CrewSchedulePage() {
   const [form, setForm] = useState({ flight_id: '', crew_id: '', role_on_flight: 'Flight Attendant' });
 
   const loadAll = () => {
-    fetch('/api/flights').then((res) => res.json()).then(setFlights);
-    fetch('/api/crew/list').then((res) => res.json()).then(setCrew);
-    fetch('/api/crew-assignments').then((res) => res.json()).then(setAssignments);
+    authFetch('/api/flights').then((res) => res.json()).then(setFlights);
+    authFetch('/api/crew/list').then((res) => (res.ok ? res.json() : [])).then(setCrew);
+    authFetch('/api/crew-assignments').then((res) => (res.ok ? res.json() : [])).then(setAssignments);
   };
   useEffect(() => { loadAll(); }, []);
 
@@ -28,7 +32,7 @@ export default function CrewSchedulePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/crew-assignments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/crew-assignments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) {
       showToast('Crew member assigned.', 'success');
@@ -41,10 +45,13 @@ export default function CrewSchedulePage() {
 
   const handleRemove = async (id) => {
     if (!confirm('Remove this crew assignment?')) return;
-    await fetch(`/api/crew-assignments/${id}`, { method: 'DELETE' });
+    await authFetch(`/api/crew-assignments/${id}`, { method: 'DELETE' });
     showToast('Assignment removed.', 'success');
     loadAll();
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

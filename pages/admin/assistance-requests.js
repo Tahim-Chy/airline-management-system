@@ -3,15 +3,19 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const STATUSES = ['Pending', 'Approved', 'Fulfilled'];
 const STATUS_BADGE = { Pending: 'bg-warning text-dark', Approved: 'bg-info text-dark', Fulfilled: 'bg-success' };
 
 export default function AdminAssistanceRequestsPage() {
+  const status = useRequireRole(['admin', 'ground_staff']);
   const { showToast } = useToast();
   const [requests, setRequests] = useState(null);
 
-  const loadRequests = () => fetch('/api/assistance').then((res) => res.json()).then(setRequests);
+  const loadRequests = () => authFetch('/api/assistance').then((res) => (res.ok ? res.json() : [])).then(setRequests);
   useEffect(() => { loadRequests(); }, []);
 
   const { query, setQuery, page, setPage, totalPages, totalResults, pageData } = useSearchAndPaginate(
@@ -21,10 +25,13 @@ export default function AdminAssistanceRequestsPage() {
   );
 
   const handleStatusChange = async (id, status) => {
-    await fetch(`/api/assistance/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    await authFetch(`/api/assistance/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
     showToast('Status updated.', 'success');
     loadRequests();
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

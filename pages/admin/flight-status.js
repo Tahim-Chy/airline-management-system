@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const STATUSES = ['Scheduled', 'Boarding', 'Delayed', 'Departed', 'Landed', 'Cancelled'];
 const STATUS_BADGE = { Scheduled: 'bg-secondary', Boarding: 'bg-primary', Delayed: 'bg-warning text-dark', Departed: 'bg-info text-dark', Landed: 'bg-success', Cancelled: 'bg-danger' };
 export default function AdminFlightStatusPage() {
+  const status = useRequireRole(['admin']);
   const [flights, setFlights] = useState([]); const [message, setMessage] = useState(''); const [messageType, setMessageType] = useState('info');
-  const loadFlights = () => fetch('/api/flights').then((res) => res.json()).then(setFlights);
+  const loadFlights = () => authFetch('/api/flights').then((res) => res.json()).then(setFlights);
   useEffect(() => { loadFlights(); }, []);
   const handleStatusChange = async (flightId, newStatus) => {
-    const res = await fetch(`/api/flights/${flightId}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) });
+    const res = await authFetch(`/api/flights/${flightId}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) });
     const data = await res.json();
     if (res.ok) { setMessageType('success'); setMessage(`Status updated to ${newStatus}.` + (['Landed','Cancelled'].includes(newStatus) ? ' Aircraft and gate released.' : '')); loadFlights(); }
     else { setMessageType('danger'); setMessage(data.error); }
   };
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Update Flight Status</h1>

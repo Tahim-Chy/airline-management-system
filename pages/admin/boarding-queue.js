@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const GROUP_BADGE = { 1: 'bg-warning text-dark', 2: 'bg-info text-dark', 3: 'bg-secondary', General: 'bg-light text-dark border' };
 export default function BoardingQueuePage() {
+  const status = useRequireRole(['admin', 'ground_staff']);
   const [flights, setFlights] = useState([]); const [flightId, setFlightId] = useState(''); const [queue, setQueue] = useState([]);
   const [message, setMessage] = useState(''); const [messageType, setMessageType] = useState('info');
-  useEffect(() => { fetch('/api/flights').then((res) => res.json()).then(setFlights); }, []);
-  const loadQueue = (id) => { if (!id) return; fetch(`/api/boarding/queue?flight_id=${id}`).then((res) => res.json()).then(setQueue); };
+  useEffect(() => { authFetch('/api/flights').then((res) => res.json()).then(setFlights); }, []);
+  const loadQueue = (id) => { if (!id) return; authFetch(`/api/boarding/queue?flight_id=${id}`).then((res) => res.json()).then(setQueue); };
   const handleFlightChange = (e) => { const id = e.target.value; setFlightId(id); loadQueue(id); };
   const handleAssignGroups = async () => {
     if (!flightId) return;
-    const res = await fetch('/api/boarding/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ flight_id: flightId }) });
+    const res = await authFetch('/api/boarding/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ flight_id: flightId }) });
     const data = await res.json();
     setMessageType(res.ok ? 'success' : 'danger'); setMessage(data.message || data.error); loadQueue(flightId);
   };
   const handleToggleBoarded = async (booking) => {
-    await fetch(`/api/boarding/${booking.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ boarded: !booking.boarded }) });
+    await authFetch(`/api/boarding/${booking.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ boarded: !booking.boarded }) });
     loadQueue(flightId);
   };
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Priority Boarding &amp; Queue</h1>

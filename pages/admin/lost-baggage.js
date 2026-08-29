@@ -3,15 +3,19 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const STATUSES = ['Reported', 'Investigating', 'Found', 'Returned', 'Closed'];
 const STATUS_BADGE = { Reported: 'bg-secondary', Investigating: 'bg-warning text-dark', Found: 'bg-info text-dark', Returned: 'bg-success', Closed: 'bg-dark' };
 
 export default function AdminLostBaggagePage() {
+  const status = useRequireRole(['admin', 'ground_staff']);
   const { showToast } = useToast();
   const [reports, setReports] = useState(null);
 
-  const loadReports = () => fetch('/api/lost-baggage').then((res) => res.json()).then(setReports);
+  const loadReports = () => authFetch('/api/lost-baggage').then((res) => (res.ok ? res.json() : [])).then(setReports);
   useEffect(() => { loadReports(); }, []);
 
   const { query, setQuery, page, setPage, totalPages, totalResults, pageData } = useSearchAndPaginate(
@@ -21,10 +25,13 @@ export default function AdminLostBaggagePage() {
   );
 
   const handleStatusChange = async (id, report_status) => {
-    await fetch(`/api/lost-baggage/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ report_status }) });
+    await authFetch(`/api/lost-baggage/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ report_status }) });
     showToast('Status updated.', 'success');
     loadReports();
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

@@ -79,17 +79,17 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="mb-4">
-                <label className="form-label small fw-semibold">Role (demo purposes — pick which one you are testing)</label>
+                <label className="form-label small fw-semibold">Role</label>
                 <select
                   className="form-select"
                   value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value })}
                 >
                   <option value="passenger">Passenger</option>
-                  <option value="admin">Admin</option>
                   <option value="crew">Crew</option>
                   <option value="ground_staff">Ground Staff</option>
                 </select>
+                <div className="form-text">Admin accounts are not self-registered — there is a single fixed administrator account for this system.</div>
               </div>
               <button className="btn btn-primary w-100" type="submit" disabled={loading}>
                 {loading ? 'Creating account…' : 'Register'}

@@ -1,6 +1,9 @@
 import { createRequest, getAllRequests, updateRequestStatus } from '../models/assistanceModel';
 import { getBookingById } from '../models/bookingModel';
+import { requireRole } from '../lib/auth';
+
 const VALID_TYPES = ['Wheelchair', 'Medical Support', 'Visual Impairment', 'Hearing Impairment', 'Other'];
+
 export async function submit(req, res) {
   try {
     const { booking_id, request_type, notes } = req.body;
@@ -12,8 +15,12 @@ export async function submit(req, res) {
     res.status(201).json({ message: 'Assistance request submitted', id });
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to submit request' }); }
 }
-export async function list(req, res) { try { res.status(200).json(await getAllRequests()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch requests' }); } }
+export async function list(req, res) {
+  if (!requireRole(req, res, ['admin', 'ground_staff'])) return;
+  try { res.status(200).json(await getAllRequests()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch requests' }); }
+}
 export async function updateStatus(req, res) {
+  if (!requireRole(req, res, ['admin', 'ground_staff'])) return;
   try { await updateRequestStatus(req.query.id, req.body.status); res.status(200).json({ message: 'Status updated' }); }
   catch (error) { console.error(error); res.status(500).json({ error: 'Failed to update status' }); }
 }
