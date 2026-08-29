@@ -1,8 +1,13 @@
-import { getAllFlights, getFlightById, createFlight, updateFlight, deleteFlight, assignAircraftAndGate, getFlightsWithAssignments, updateFlightStatus } from '../models/flightModel';
+import {
+  getAllFlights, getFlightById, createFlight, updateFlight, deleteFlight,
+  assignAircraftAndGate, getFlightsWithAssignments, updateFlightStatus,
+} from '../models/flightModel';
 import { getAircraftById, setAircraftStatus } from '../models/aircraftModel';
 import { getGateById, setGateStatus } from '../models/gateModel';
 import { calculateDynamicPrice } from '../lib/pricing';
+import { requireRole } from '../lib/auth';
 
+// Public — anyone (including guests) needs to browse/search flights.
 export async function listFlights(req, res) {
   try { res.status(200).json(await getAllFlights()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch flights' }); }
 }
@@ -13,7 +18,10 @@ export async function getFlight(req, res) {
     res.status(200).json(flight);
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch flight' }); }
 }
+
+// Admin only — scheduling is a back-office decision.
 export async function addFlight(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     const { flight_number, origin, destination, departure_time, arrival_time, total_seats, price } = req.body;
     if (!flight_number || !origin || !destination || !departure_time || !arrival_time) return res.status(400).json({ error: 'Missing required fields' });
@@ -22,6 +30,7 @@ export async function addFlight(req, res) {
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to create flight' }); }
 }
 export async function editFlight(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     if (!req.query.id) return res.status(400).json({ error: 'Missing flight id in the request URL' });
     await updateFlight(req.query.id, req.body);
@@ -29,16 +38,18 @@ export async function editFlight(req, res) {
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to update flight' }); }
 }
 export async function removeFlight(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     if (!req.query.id) return res.status(400).json({ error: 'Missing flight id in the request URL' });
     await deleteFlight(req.query.id);
     res.status(200).json({ message: 'Flight deleted' });
   } catch (error) {
-    if (error.errno === 1451) return res.status(409).json({ error: 'This flight can\u2019t be deleted \u2014 it already has bookings, baggage, or crew assigned to it. Cancel it instead using Update Flight Status.' });
+    if (error.errno === 1451) return res.status(409).json({ error: 'This flight can\u2019t be deleted — it already has bookings, baggage, or crew assigned to it. Cancel it instead using Update Flight Status.' });
     console.error(error); res.status(500).json({ error: 'Failed to delete flight' });
   }
 }
 export async function assignFlight(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     const { flight_id, aircraft_id, gate_id } = req.body;
     if (!flight_id) return res.status(400).json({ error: 'flight_id is required' });
@@ -59,11 +70,14 @@ export async function assignFlight(req, res) {
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to save assignment' }); }
 }
 export async function listAssignments(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try { res.status(200).json(await getFlightsWithAssignments()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch assignments' }); }
 }
+
 const VALID_STATUSES = ['Scheduled', 'Boarding', 'Delayed', 'Departed', 'Landed', 'Cancelled'];
 const RELEASE_ON_STATUSES = ['Landed', 'Cancelled'];
 export async function changeStatus(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     const { status } = req.body;
     if (!VALID_STATUSES.includes(status)) return res.status(400).json({ error: `Status must be one of: ${VALID_STATUSES.join(', ')}` });
@@ -76,6 +90,8 @@ export async function changeStatus(req, res) {
     res.status(200).json({ message: 'Status updated' });
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to update status' }); }
 }
+
+// Public — passengers need to see live prices while searching/booking.
 export async function listFares(req, res) {
   try {
     const flights = await getAllFlights();

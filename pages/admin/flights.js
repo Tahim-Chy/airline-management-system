@@ -3,6 +3,9 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const emptyForm = { flight_number: '', origin: '', destination: '', departure_time: '', arrival_time: '', total_seats: 150, price: 100, status: 'Scheduled' };
 
@@ -15,6 +18,7 @@ function toDatetimeLocal(value) {
 }
 
 export default function AdminFlightsPage() {
+  const status = useRequireRole(['admin']);
   const { showToast } = useToast();
   const [flights, setFlights] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -27,9 +31,10 @@ export default function AdminFlightsPage() {
       .catch(() => showToast('Could not load flights — check your database connection.', 'danger'));
 
   useEffect(() => {
+    if (status !== 'authorized') return;
     loadFlights();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [status]);
 
   const { query, setQuery, page, setPage, totalPages, totalResults, pageData } = useSearchAndPaginate(
     flights || [],
@@ -44,7 +49,7 @@ export default function AdminFlightsPage() {
     const url = editingId ? `/api/flights/${editingId}` : '/api/flights';
     const method = editingId ? 'PUT' : 'POST';
     try {
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const res = await authFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       const data = await res.json();
       if (res.ok) {
         showToast(editingId ? 'Flight updated!' : 'Flight created!', 'success');
@@ -76,7 +81,7 @@ export default function AdminFlightsPage() {
   const handleDelete = async (id) => {
     if (!confirm('Delete this flight?')) return;
     try {
-      const res = await fetch(`/api/flights/${id}`, { method: 'DELETE' });
+      const res = await authFetch(`/api/flights/${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
         showToast('Flight deleted.', 'success');
@@ -93,6 +98,9 @@ export default function AdminFlightsPage() {
     setEditingId(null);
     setForm(emptyForm);
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

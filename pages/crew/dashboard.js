@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 export default function CrewDashboard() {
+  const status = useRequireRole(['admin', 'crew']);
   const router = useRouter();
   const [user, setUser] = useState(null); const [history, setHistory] = useState([]); const [message, setMessage] = useState('');
   const loadHistory = async (token) => {
-    const res = await fetch('/api/attendance/me', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch('/api/attendance/me', { headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) setHistory(await res.json());
   };
   useEffect(() => {
@@ -18,15 +22,18 @@ export default function CrewDashboard() {
   }, []);
   const handleClockIn = async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/attendance/clock-in', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch('/api/attendance/clock-in', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json(); setMessage(data.message || data.error); loadHistory(token);
   };
   const handleClockOut = async () => {
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/attendance/clock-out', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+    const res = await authFetch('/api/attendance/clock-out', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json(); setMessage(data.message ? `Clocked out. Worked ${data.workingHours} hours.` : data.error); loadHistory(token);
   };
   if (!user) return null;
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">

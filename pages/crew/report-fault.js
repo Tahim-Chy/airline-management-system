@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const SEVERITIES = ['Minor', 'Major', 'Critical'];
 export default function ReportFaultPage() {
+  const status = useRequireRole(['admin', 'crew']);
   const router = useRouter();
   const [aircraft, setAircraft] = useState([]);
   const [form, setForm] = useState({ aircraft_id: '', fault_description: '', severity: 'Minor' });
@@ -9,17 +13,20 @@ export default function ReportFaultPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { router.push('/login'); return; }
-    fetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
+    authFetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-    const res = await fetch('/api/faults', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/faults', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) { setMessageType('success'); setMessage(data.message); setForm({ aircraft_id: '', fault_description: '', severity: 'Minor' }); }
     else { setMessageType('danger'); setMessage(data.error); }
   };
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4" style={{ maxWidth: '500px' }}>
       <h1>Report Aircraft Fault</h1>

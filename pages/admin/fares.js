@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 export default function AdminFaresPage() {
+  const status = useRequireRole(['admin']);
   const [fares, setFares] = useState([]);
-  useEffect(() => { fetch('/api/flights/fares').then((res) => res.json()).then(setFares); }, []);
+  useEffect(() => { authFetch('/api/flights/fares').then((res) => res.json()).then(setFares); }, []);
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Dynamic Fare Management</h1>

@@ -1,6 +1,10 @@
 import { addExpense, getAllExpenses } from '../models/expenseModel';
+import { requireRole } from '../lib/auth';
+
 const CATEGORIES = ['Fuel', 'Maintenance', 'Salaries', 'Airport Fees', 'Catering', 'Other'];
+
 export async function create(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
   try {
     const { category, description, amount, expense_date } = req.body;
     if (!category || !amount || !expense_date) return res.status(400).json({ error: 'Category, amount, and date are required' });
@@ -9,4 +13,7 @@ export async function create(req, res) {
     res.status(201).json({ message: 'Expense recorded', id });
   } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to record expense' }); }
 }
-export async function list(req, res) { try { res.status(200).json(await getAllExpenses()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch expenses' }); } }
+export async function list(req, res) {
+  if (!requireRole(req, res, ['admin'])) return;
+  try { res.status(200).json(await getAllExpenses()); } catch (error) { console.error(error); res.status(500).json({ error: 'Failed to fetch expenses' }); }
+}

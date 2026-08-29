@@ -3,19 +3,23 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const TYPES = ['Routine Inspection', 'Repair', 'Overhaul', 'Other'];
 const STATUS_BADGE = { Scheduled: 'bg-warning text-dark', 'In Progress': 'bg-info text-dark', Completed: 'bg-success' };
 
 export default function AdminMaintenancePage() {
+  const status = useRequireRole(['admin']);
   const { showToast } = useToast();
   const [records, setRecords] = useState(null);
   const [aircraft, setAircraft] = useState([]);
   const [form, setForm] = useState({ aircraft_id: '', maintenance_type: 'Routine Inspection', scheduled_date: '', notes: '' });
 
   const loadAll = () => {
-    fetch('/api/maintenance').then((res) => res.json()).then(setRecords);
-    fetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
+    authFetch('/api/maintenance').then((res) => (res.ok ? res.json() : [])).then(setRecords);
+    authFetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
   };
   useEffect(() => { loadAll(); }, []);
 
@@ -27,7 +31,7 @@ export default function AdminMaintenancePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/maintenance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/maintenance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) {
       showToast(data.message, 'success');
@@ -39,11 +43,14 @@ export default function AdminMaintenancePage() {
   };
 
   const handleComplete = async (id) => {
-    const res = await fetch(`/api/maintenance/${id}/complete`, { method: 'PATCH' });
+    const res = await authFetch(`/api/maintenance/${id}/complete`, { method: 'PATCH' });
     const data = await res.json();
     showToast(res.ok ? data.message : data.error, res.ok ? 'success' : 'danger');
     loadAll();
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

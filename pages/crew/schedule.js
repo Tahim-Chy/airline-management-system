@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 export default function CrewSchedulePage() {
+  const status = useRequireRole(['admin', 'crew']);
   const router = useRouter(); const [schedule, setSchedule] = useState(null);
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { router.push('/login'); return; }
-    fetch('/api/crew-assignments/my-schedule', { headers: { Authorization: `Bearer ${token}` } }).then((res) => res.json()).then(setSchedule);
+    authFetch('/api/crew-assignments/my-schedule', { headers: { Authorization: `Bearer ${token}` } }).then((res) => res.json()).then(setSchedule);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>My Flight Schedule</h1>

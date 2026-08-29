@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const STATUS_BADGE = { Valid: 'bg-success', 'Expiring Soon': 'bg-warning text-dark', Expired: 'bg-danger' };
 export default function MyCertificationsPage() {
+  const status = useRequireRole(['admin', 'crew']);
   const router = useRouter();
   const [certs, setCerts] = useState(null);
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { router.push('/login'); return; }
-    fetch('/api/certifications/my-certifications', { headers: { Authorization: `Bearer ${token}` } }).then((res) => res.json()).then(setCerts);
+    authFetch('/api/certifications/my-certifications', { headers: { Authorization: `Bearer ${token}` } }).then((res) => res.json()).then(setCerts);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>My Certifications</h1>

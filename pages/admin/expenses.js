@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const CATEGORIES = ['Fuel', 'Maintenance', 'Salaries', 'Airport Fees', 'Catering', 'Other'];
 export default function AdminExpensesPage() {
+  const status = useRequireRole(['admin']);
   const [expenses, setExpenses] = useState([]);
   const [form, setForm] = useState({ category: 'Fuel', description: '', amount: '', expense_date: '' });
   const [message, setMessage] = useState(''); const [messageType, setMessageType] = useState('info');
-  const loadExpenses = () => fetch('/api/expenses').then((res) => res.json()).then(setExpenses);
+  const loadExpenses = () => authFetch('/api/expenses').then((res) => res.json()).then(setExpenses);
   useEffect(() => { loadExpenses(); }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/expenses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/expenses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) { setMessageType('success'); setMessage('Expense recorded.'); setForm({ category: 'Fuel', description: '', amount: '', expense_date: '' }); loadExpenses(); }
     else { setMessageType('danger'); setMessage(data.error); }
   };
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Log an Expense</h1>

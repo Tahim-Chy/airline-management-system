@@ -3,16 +3,20 @@ import { useSearchAndPaginate } from '../../lib/useSearchAndPaginate';
 import { SearchBox, PaginationBar } from '../../components/TableControls';
 import { SkeletonTableRows } from '../../components/Skeleton';
 import { useToast } from '../../components/ToastProvider';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 
 const STATUSES = ['New', 'In Review', 'Resolved'];
 const STATUS_BADGE = { New: 'bg-secondary', 'In Review': 'bg-warning text-dark', Resolved: 'bg-success' };
 const CATEGORY_BADGE = { Complaint: 'bg-danger', Compliment: 'bg-success', Suggestion: 'bg-info text-dark' };
 
 export default function AdminFeedbackPage() {
+  const status = useRequireRole(['admin']);
   const { showToast } = useToast();
   const [feedback, setFeedback] = useState(null);
 
-  const loadFeedback = () => fetch('/api/feedback').then((res) => res.json()).then(setFeedback);
+  const loadFeedback = () => authFetch('/api/feedback').then((res) => (res.ok ? res.json() : [])).then(setFeedback);
   useEffect(() => { loadFeedback(); }, []);
 
   const { query, setQuery, page, setPage, totalPages, totalResults, pageData } = useSearchAndPaginate(
@@ -22,10 +26,13 @@ export default function AdminFeedbackPage() {
   );
 
   const handleStatusChange = async (id, status) => {
-    await fetch(`/api/feedback/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    await authFetch(`/api/feedback/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
     showToast('Status updated.', 'success');
     loadFeedback();
   };
+
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
 
   return (
     <div className="container mt-4 fade-in">

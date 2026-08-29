@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 export default function AnalyticsDashboard() {
+  const status = useRequireRole(['admin']);
   const [data, setData] = useState(null);
   const monthlyCanvasRef = useRef(null); const flightCanvasRef = useRef(null);
   const monthlyChartRef = useRef(null); const flightChartRef = useRef(null);
-  useEffect(() => { fetch('/api/analytics/dashboard').then((res) => res.json()).then(setData); }, []);
+  useEffect(() => {
+    if (status !== 'authorized') return;
+    authFetch('/api/analytics/dashboard').then((res) => (res.ok ? res.json() : { total_revenue: 0, total_expenses: 0, net_profit: 0, booking_count: 0, monthly: [], revenue_by_flight: [] })).then(setData);
+  }, [status]);
   useEffect(() => {
     if (!data) return;
     if (monthlyChartRef.current) monthlyChartRef.current.destroy();
@@ -21,7 +28,10 @@ export default function AnalyticsDashboard() {
     });
     return () => { monthlyChartRef.current?.destroy(); flightChartRef.current?.destroy(); };
   }, [data]);
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
   if (!data) return (<div className="container mt-4"><h1>Revenue &amp; Expense Analytics</h1><p>Loading…</p></div>);
+
   return (
     <div className="container mt-4">
       <h1>Revenue &amp; Expense Analytics</h1>

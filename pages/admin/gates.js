@@ -1,19 +1,26 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 const STATUS_BADGE = { Available: 'bg-success', Occupied: 'bg-warning text-dark' };
 export default function AdminGatesPage() {
+  const status = useRequireRole(['admin']);
   const [gates, setGates] = useState([]);
   const [form, setForm] = useState({ gate_number: '', terminal: '' });
   const [message, setMessage] = useState(''); const [messageType, setMessageType] = useState('info');
-  const loadGates = () => fetch('/api/gates').then((res) => res.json()).then(setGates);
+  const loadGates = () => authFetch('/api/gates').then((res) => res.json()).then(setGates);
   useEffect(() => { loadGates(); }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/gates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/gates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) { setMessageType('success'); setMessage('Gate added.'); setForm({ gate_number: '', terminal: '' }); loadGates(); }
     else { setMessageType('danger'); setMessage(data.error); }
   };
-  const handleDelete = async (id) => { if (!confirm('Remove this gate?')) return; await fetch(`/api/gates/${id}`, { method: 'DELETE' }); loadGates(); };
+  const handleDelete = async (id) => { if (!confirm('Remove this gate?')) return; await authFetch(`/api/gates/${id}`, { method: 'DELETE' }); loadGates(); };
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Airport Gates</h1>

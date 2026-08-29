@@ -1,25 +1,32 @@
 import { useEffect, useState } from 'react';
+import { useRequireRole } from '../../lib/useRequireRole';
+import { authFetch } from '../../lib/authFetch';
+import AccessDenied from '../../components/AccessDenied';
 export default function AdminAssignmentsPage() {
+  const status = useRequireRole(['admin']);
   const [flights, setFlights] = useState([]); const [aircraft, setAircraft] = useState([]); const [gates, setGates] = useState([]); const [assignments, setAssignments] = useState([]);
   const [form, setForm] = useState({ flight_id: '', aircraft_id: '', gate_id: '' });
   const [message, setMessage] = useState(''); const [messageType, setMessageType] = useState('info');
   const loadAll = () => {
-    fetch('/api/flights').then((res) => res.json()).then(setFlights);
-    fetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
-    fetch('/api/gates').then((res) => res.json()).then(setGates);
-    fetch('/api/flights/assignments').then((res) => res.json()).then(setAssignments);
+    authFetch('/api/flights').then((res) => res.json()).then(setFlights);
+    authFetch('/api/aircraft').then((res) => res.json()).then(setAircraft);
+    authFetch('/api/gates').then((res) => res.json()).then(setGates);
+    authFetch('/api/flights/assignments').then((res) => res.json()).then(setAssignments);
   };
   useEffect(() => { loadAll(); }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.flight_id) { setMessageType('danger'); setMessage('Choose a flight first.'); return; }
-    const res = await fetch('/api/flights/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await authFetch('/api/flights/assign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
     const data = await res.json();
     if (res.ok) { setMessageType('success'); setMessage('Assignment saved.'); setForm({ flight_id: '', aircraft_id: '', gate_id: '' }); loadAll(); }
     else { setMessageType('danger'); setMessage(data.error); }
   };
   const availableAircraft = aircraft.filter((a) => a.status === 'Available');
   const availableGates = gates.filter((g) => g.status === 'Available');
+  if (status === 'checking' || status === 'guest') return null;
+  if (status === 'unauthorized') return <AccessDenied />;
+
   return (
     <div className="container mt-4">
       <h1>Aircraft &amp; Gate Assignment</h1>
